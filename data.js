@@ -1,4 +1,4 @@
-// data.js
+
 const players = [
     {
         "_id": 1,
