@@ -1,0 +1,28 @@
+/* public/style.css */
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f4f4f9;
+    color: #333;
+  }
+  
+  h1 {
+    color: #b71c1c;
+  }
+  
+  h2 {
+    color: #333;
+  }
+  
+  a {
+    color: #0d47a1;
+    font-size: 1.2em;
+    text-decoration: none;
+  }
+  
+  a:hover {
+    text-decoration: underline;
+  }
+  
