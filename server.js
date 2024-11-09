@@ -15,7 +15,7 @@ app.get('/api/players', (req, res) => {
   res.json(players);
 });
 
-// Serve index.html for the API documentation
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
