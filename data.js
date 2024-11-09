@@ -5,7 +5,7 @@ const players = [
         "name": "Thibaut Courtois",
         "position": "Goalkeeper",
         "nationality": "Belgium",
-        "img_name": "/images/Thibaut-Courtois.jpeg"
+        "img_name": "/images/Tibaut-Courtois.jpeg"
     },
     {
         "_id": 2,
