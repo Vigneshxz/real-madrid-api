@@ -7,11 +7,11 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Mock Data
+
 const players = require('./data');
 let comments = [];
 
-// Middleware
+
 app.use(cors());
 app.use(express.json({ limit: '10mb' })); // Increase payload size limit
 app.use('/images', express.static(path.join(__dirname, 'images')));
