@@ -1,5 +1,4 @@
 const express = require('express');
-const path = require('path');
 const cors = require('cors');
 const Joi = require('joi');
 const { v4: uuidv4 } = require('uuid');
@@ -7,31 +6,17 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Mock Data
+let comments = []; // Array to store comments
 
-const players = require('./data');
-let comments = [];
-
-
+// Middleware
 app.use(cors());
-app.use(express.json({ limit: '10mb' })); // Increase payload size limit
-app.use('/images', express.static(path.join(__dirname, 'images')));
-app.use(express.static('public'));
+app.use(express.json({ limit: '10mb' }));
 
-// Validation Schema for Comments
+// Validation Schema for Adding/Editing Comments
 const commentSchema = Joi.object({
-  comment: Joi.string().min(3).allow(null).allow(''), // Allow null or empty string for comment
-  image: Joi.string().allow(null).allow(''), // Allow null or empty string for image
-});
-
-// Routes
-// Serve players data
-app.get('/api/players', (req, res) => {
-  res.json(players);
-});
-
-// Serve static HTML
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  comment: Joi.string().allow(null).allow(''), // Allow empty or null comments
+  image: Joi.string().allow(null).allow(''), // Allow empty or null images
 });
 
 // Get all comments
@@ -41,12 +26,10 @@ app.get('/api/comments', (req, res) => {
 
 // Add a new comment
 app.post('/api/comments', (req, res) => {
-  console.log("Incoming request body:", req.body); // Log incoming data
-
   const { error } = commentSchema.validate(req.body);
 
   if (error) {
-    console.error("Validation error:", error.details[0].message); // Log validation errors
+    console.error("Validation error (POST):", error.details[0].message);
     return res
       .status(400)
       .json({ success: false, message: error.details[0].message });
@@ -54,23 +37,60 @@ app.post('/api/comments', (req, res) => {
 
   const newComment = { id: uuidv4(), ...req.body };
   comments.push(newComment);
-  console.log("New comment added:", newComment); // Log successful addition
-  res.json({ success: true, message: 'Comment added successfully!' });
+
+  console.log("New comment added:", newComment);
+  res.json({ success: true, message: 'Comment added successfully!', data: newComment });
 });
 
-// Delete a comment by ID
-app.delete('/api/comments/:id', (req, res) => {
+// Edit a comment
+app.put('/api/comments/:id', (req, res) => {
   const { id } = req.params;
-  const initialLength = comments.length;
-  comments = comments.filter((comment) => comment.id !== id);
+  const { error } = commentSchema.validate(req.body);
 
-  if (comments.length === initialLength) {
+  if (error) {
+    console.error("Validation error (PUT):", error.details[0].message);
+    return res
+      .status(400)
+      .json({ success: false, message: error.details[0].message });
+  }
+
+  const commentIndex = comments.findIndex((comment) => comment.id === id);
+
+  if (commentIndex === -1) {
+    console.error("Comment not found:", id);
     return res
       .status(404)
       .json({ success: false, message: 'Comment not found.' });
   }
 
-  console.log(`Comment with ID ${id} deleted`); // Log deletion
+  comments[commentIndex] = {
+    ...comments[commentIndex],
+    ...req.body, // Update only the fields provided in the request
+  };
+
+  console.log("Comment updated:", comments[commentIndex]);
+  res.json({
+    success: true,
+    message: 'Comment updated successfully!',
+    data: comments[commentIndex],
+  });
+});
+
+// Delete a comment
+app.delete('/api/comments/:id', (req, res) => {
+  const { id } = req.params;
+
+  const initialLength = comments.length;
+  comments = comments.filter((comment) => comment.id !== id);
+
+  if (comments.length === initialLength) {
+    console.error("Comment not found (DELETE):", id);
+    return res
+      .status(404)
+      .json({ success: false, message: 'Comment not found.' });
+  }
+
+  console.log(`Comment with ID ${id} deleted.`);
   res.json({ success: true, message: 'Comment deleted successfully!' });
 });
 
