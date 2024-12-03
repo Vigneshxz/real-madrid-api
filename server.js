@@ -1,67 +1,83 @@
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const Joi = require('joi');
-const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Mock Data
+const players = require('./data'); // Example player data
 let comments = [];
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '10mb' })); // Increase payload size limit
+app.use('/images', express.static(path.join(__dirname, 'images')));
+app.use(express.static('public'));
 
-// Serve static files (optional)
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Default route for `/`
-app.get('/', (req, res) => {
-  res.send('Welcome to the Real Madrid API Server! Use /api/comments to interact with the API.');
+// Validation Schema for Comments
+const commentSchema = Joi.object({
+  comment: Joi.string().min(3).allow(null).allow(''), // Allow null or empty string
+  image: Joi.string().allow(null).allow(''), // Allow null or empty string
 });
 
-// API Routes
+// Routes
+// Serve players data
+app.get('/api/players', (req, res) => {
+  res.json(players);
+});
+
+// Serve static HTML
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Get all comments
 app.get('/api/comments', (req, res) => {
   res.json(comments);
 });
 
+// Add a new comment
 app.post('/api/comments', (req, res) => {
-  const { error } = Joi.object({
-    comment: Joi.string().allow(null).allow(''),
-    image: Joi.string().allow(null).allow(''),
-  }).validate(req.body);
+  console.log("Incoming request body:", req.body); // Log incoming data
 
+  const { error } = commentSchema.validate(req.body);
   if (error) {
+    console.error("Validation error:", error.details[0].message);
     return res.status(400).json({ success: false, message: error.details[0].message });
   }
 
   const newComment = { id: uuidv4(), ...req.body };
   comments.push(newComment);
-  res.json({ success: true, message: 'Comment added successfully!', data: newComment });
+  console.log("New comment added:", newComment);
+  res.json({ success: true, message: 'Comment added successfully!' });
 });
 
+// Edit (update) a comment
 app.put('/api/comments/:id', (req, res) => {
   const { id } = req.params;
-  const { error } = Joi.object({
-    comment: Joi.string().allow(null).allow(''),
-    image: Joi.string().allow(null).allow(''),
-  }).validate(req.body);
+  const { comment, image } = req.body;
 
+  // Validate the updated data
+  const { error } = commentSchema.validate({ comment, image });
   if (error) {
     return res.status(400).json({ success: false, message: error.details[0].message });
   }
 
-  const index = comments.findIndex((comment) => comment.id === id);
-  if (index === -1) {
+  // Find the comment by ID and update it
+  const commentIndex = comments.findIndex((c) => c.id === id);
+  if (commentIndex === -1) {
     return res.status(404).json({ success: false, message: 'Comment not found.' });
   }
 
-  comments[index] = { ...comments[index], ...req.body };
-  res.json({ success: true, message: 'Comment updated successfully!', data: comments[index] });
+  comments[commentIndex] = { ...comments[commentIndex], comment, image };
+  console.log(`Comment with ID ${id} updated:`, comments[commentIndex]);
+  res.json({ success: true, message: 'Comment updated successfully!' });
 });
 
+// Delete a comment by ID
 app.delete('/api/comments/:id', (req, res) => {
   const { id } = req.params;
   const initialLength = comments.length;
@@ -71,15 +87,11 @@ app.delete('/api/comments/:id', (req, res) => {
     return res.status(404).json({ success: false, message: 'Comment not found.' });
   }
 
+  console.log(`Comment with ID ${id} deleted.`);
   res.json({ success: true, message: 'Comment deleted successfully!' });
 });
 
-// Fallback route for unmatched paths
-app.get('*', (req, res) => {
-  res.send('Welcome to the Real Madrid API Server! Use /api/comments to access the API.');
-});
-
-// Start server
+// Start Server
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
