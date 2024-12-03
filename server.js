@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const Joi = require('joi');
+const path = require('path'); // For serving static files
 const { v4: uuidv4 } = require('uuid');
 
 const app = express();
@@ -17,6 +18,16 @@ app.use(express.json({ limit: '10mb' }));
 const commentSchema = Joi.object({
   comment: Joi.string().allow(null).allow(''), // Allow empty or null comments
   image: Joi.string().allow(null).allow(''), // Allow empty or null images
+});
+
+// Serve static files (optional)
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Default route for `/`
+app.get('/', (req, res) => {
+  res.send('Welcome to the Real Madrid API Server!'); // You can modify this message
+  // Alternatively, serve an HTML file:
+  // res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Get all comments
